@@ -1,6 +1,6 @@
 -- lua/plugins/gotmpl.lua
 return {
-  -- 1. Map .tmpl extension to gotmpl filetype
+  -- 1. Map .tmpl extension to html.gotmpl filetype & enforce dual LSP attachment
   {
     "AstroNvim/astrocore",
     ---@type AstroCoreOpts
@@ -8,6 +8,43 @@ return {
       filetypes = {
         extension = {
           tmpl = "html.gotmpl",
+        },
+      },
+      autocmds = {
+        html_gotmpl_lsp = {
+          {
+            event = { "FileType", "BufReadPost", "BufNewFile" },
+            pattern = { "*.tmpl", "gotmpl", "html.gotmpl" },
+            callback = function(args)
+              -- Ensure filetype is explicitly html.gotmpl
+              if vim.bo[args.buf].filetype ~= "html.gotmpl" then vim.bo[args.buf].filetype = "html.gotmpl" end
+
+              local root_dir = vim.fs.root(args.buf, { "go.work", "go.mod", ".git", "package.json" }) or vim.fn.getcwd()
+
+              -- Start html-lsp
+              vim.lsp.start({
+                name = "html",
+                cmd = { "vscode-html-language-server", "--stdio" },
+                root_dir = root_dir,
+              }, {
+                bufnr = args.buf,
+              })
+
+              -- Start gopls with template settings
+              vim.lsp.start({
+                name = "gopls",
+                cmd = { "gopls" },
+                root_dir = root_dir,
+                settings = {
+                  gopls = {
+                    templateExtensions = { "tmpl", "gotmpl", "html" },
+                  },
+                },
+              }, {
+                bufnr = args.buf,
+              })
+            end,
+          },
         },
       },
     },
@@ -26,38 +63,22 @@ return {
     end,
   },
 
-  -- 3. Configure gopls to treat .tmpl files as Go templates
+  -- 3. Extend LuaSnip to include HTML snippets for html.gotmpl
   {
-    "AstroNvim/astrolsp",
-    ---@type AstroLSPOpts
-    opts = {
-      config = {
-        gopls = {
-          settings = {
-            gopls = {
-              templateExtensions = { "tmpl", "gotmpl", "html" },
-            },
-          },
-        },
-        html = {
-          filetypes = { "html", "gotmpl", "html.gotmpl" },
-        },
-      },
-    },
-    {
-      "L3MON4D3/LuaSnip",
-      opts = function(_, opts)
-        local luasnip = require "luasnip"
-        luasnip.filetype_extend("gotmpl", { "html" })
-        luasnip.filetype_extend("html.gotmpl", { "html" })
-        return opts
-      end,
-    },
+    "L3MON4D3/LuaSnip",
+    opts = function(_, opts)
+      local luasnip = require "luasnip"
+      luasnip.filetype_extend("gotmpl", { "html" })
+      luasnip.filetype_extend("html.gotmpl", { "html" })
+      return opts
+    end,
   },
+
+  -- 4. Auto-install Mason LSP binaries
   {
     "WhoIsSethDaniel/mason-tool-installer.nvim",
     opts = {
-      ensure_installed = { "gopls", "html-lsp", "emmet-ls" }, -- automatically install lsp
+      ensure_installed = { "gopls", "html-lsp", "emmet-ls" },
     },
   },
 }
