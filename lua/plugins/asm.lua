@@ -175,7 +175,7 @@ return {
   {
     "WhoIsSethDaniel/mason-tool-installer.nvim",
     opts = {
-      ensure_installed = { "asm-lsp", "asmfmt", "codelldb" },
+      ensure_installed = { "asmfmt", "codelldb" },
     },
   },
 }
