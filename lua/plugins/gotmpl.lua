@@ -71,6 +71,12 @@ return {
         ["html.gotmpl"] = { "djlint" },
         gotmpl = { "djlint" },
       },
+      formatters = {
+        djlint = {
+          -- Pass flags so djlint correctly parses Go control structures in HTML
+          extra_args = { "--profile=golang", "--reformat" },
+        },
+      },
       format_on_save = {
         timeout_ms = 2000,
         lsp_fallback = true,
