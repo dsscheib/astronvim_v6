@@ -1,6 +1,6 @@
 -- lua/plugins/gotmpl.lua
 return {
-  -- 1. Map .tmpl extension to html.gotmpl filetype & enforce dual LSP attachment
+  -- 1. Map .tmpl extension to html.gotmpl filetype & install Treesitter parsers via AstroCore
   {
     "AstroNvim/astrocore",
     ---@type AstroCoreOpts
@@ -8,96 +8,54 @@ return {
       filetypes = {
         extension = {
           tmpl = "html.gotmpl",
+          gotmpl = "html.gotmpl",
         },
       },
-      autocmds = {
-        html_gotmpl_lsp = {
-          {
-            event = { "FileType", "BufReadPost", "BufNewFile" },
-            pattern = { "*.tmpl", "gotmpl", "html.gotmpl" },
-            callback = function(args)
-              if vim.bo[args.buf].filetype ~= "html.gotmpl" then vim.bo[args.buf].filetype = "html.gotmpl" end
+      treesitter = {
+        ensure_installed = { "gotmpl", "html", "go" },
+      },
+    },
+  },
 
-              local root_dir = vim.fs.root(args.buf, { "go.work", "go.mod", ".git", "package.json" }) or vim.fn.getcwd()
-
-              -- Start html-lsp
-              vim.lsp.start({
-                name = "html",
-                cmd = { "vscode-html-language-server", "--stdio" },
-                root_dir = root_dir,
-              }, { bufnr = args.buf })
-
-              -- Start gopls with template settings
-              vim.lsp.start({
-                name = "gopls",
-                cmd = { "gopls" },
-                root_dir = root_dir,
-                settings = {
-                  gopls = {
-                    templateExtensions = { "tmpl", "gotmpl", "html" },
-                  },
-                },
-              }, { bufnr = args.buf })
-            end,
+  -- 2. Native AstroLSP setup for html and gopls template support
+  {
+    "AstroNvim/astrolsp",
+    ---@type AstroLSPOpts
+    opts = {
+      config = {
+        html = {
+          filetypes = { "html", "html.gotmpl" },
+        },
+        gopls = {
+          filetypes = { "go", "gomod", "gowork", "gotmpl", "html.gotmpl" },
+          settings = {
+            gopls = {
+              templateExtensions = { "tmpl", "gotmpl" },
+            },
           },
         },
       },
     },
   },
 
-  -- 2. Ensure AstroLSP formatting is enabled for the buffer
-  {
-    "AstroNvim/astrolsp",
-    ---@type AstroLSPOpts
-    opts = {
-      formatting = {
-        format_on_save = {
-          enabled = true,
-        },
-        timeout_ms = 2000,
-      },
-    },
-  },
-
-  -- 3. Configure conform.nvim for formatting and explicit auto-format on save
+  -- 3. Configure conform.nvim for Go template formatting with djlint
   {
     "stevearc/conform.nvim",
     opts = {
-      -- formatters_by_ft = {
-      --   ["html.gotmpl"] = { "prettierd", "prettier", stop_after_first = true },
-      --   gotmpl = { "prettierd", "prettier", stop_after_first = true },
-      -- },
-      formatters_by_ft = {
-        ["html.gotmpl"] = { "djlint" },
-        gotmpl = { "djlint" },
-      },
       formatters = {
-        djlint = {
-          -- Pass flags so djlint correctly parses Go control structures in HTML
-          extra_args = { "--profile=golang", "--reformat" },
+        djlint_go = {
+          inherit = "djlint",
+          prepend_args = { "--profile=golang" },
         },
       },
-      format_on_save = {
-        timeout_ms = 2000,
-        lsp_fallback = true,
+      formatters_by_ft = {
+        ["html.gotmpl"] = { "djlint_go" },
+        gotmpl = { "djlint_go" },
       },
     },
   },
 
-  -- 4. Ensure Treesitter parser for gotmpl is installed
-  {
-    "nvim-treesitter/nvim-treesitter",
-    opts = function(_, opts)
-      if opts.ensure_installed ~= "all" then
-        opts.ensure_installed = opts.ensure_installed or {}
-        vim.list_extend(opts.ensure_installed, { "gotmpl", "html", "go" })
-      end
-      opts.highlight = opts.highlight or {}
-      opts.highlight.enable = true
-    end,
-  },
-
-  -- 5. Extend LuaSnip to include HTML snippets
+  -- 4. Extend LuaSnip to include HTML snippets
   {
     "L3MON4D3/LuaSnip",
     opts = function(_, opts)
@@ -108,11 +66,11 @@ return {
     end,
   },
 
-  -- 6. Auto-install Mason binaries
+  -- 5. Auto-install Mason binaries
   {
     "WhoIsSethDaniel/mason-tool-installer.nvim",
     opts = {
-      ensure_installed = { "gopls", "html-lsp", "emmet-ls", "prettierd" },
+      ensure_installed = { "gopls", "html-lsp", "djlint" },
     },
   },
 }

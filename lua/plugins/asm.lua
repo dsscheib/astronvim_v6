@@ -1,8 +1,6 @@
--- if true then return {} end -- WARN: REMOVE THIS LINE TO ACTIVATE THIS FILE
-
 -- lua/plugins/asm.lua
 return {
-  -- 1. Ensure filetype auto-detection for assembly files
+  -- 1. Ensure filetype auto-detection and Treesitter parser for assembly files
   {
     "AstroNvim/astrocore",
     ---@type AstroCoreOpts
@@ -14,21 +12,20 @@ return {
           S = "asm",
         },
       },
+      treesitter = {
+        ensure_installed = { "asm" },
+      },
     },
   },
 
-  -- 2. Configure asm-lsp for x86-64 & ARM support
+  -- 2. Configure asm-lsp with root markers
   {
     "AstroNvim/astrolsp",
     ---@type AstroLSPOpts
     opts = {
       config = {
         asm_lsp = {
-          cmd = { "asm-lsp" },
-          filetypes = { "asm", "s", "S" },
-          root_dir = function(bufnr)
-            return vim.fs.root(bufnr, { ".asm-lsp.toml", Makefile, ".git" }) or vim.fn.getcwd()
-          end,
+          root_markers = { ".asm-lsp.toml", "Makefile", ".git" },
         },
       },
     },
@@ -111,27 +108,16 @@ return {
   -- 4. Debug Adapter Protocol Setup (nvim-dap & codelldb / gdb)
   {
     "mfussenegger/nvim-dap",
-    config = function()
+    optional = true,
+    opts = function()
       local dap = require "dap"
 
-      -- Option A: gdb setup
-      dap.adapters.gdb = {
+      dap.adapters.gdb = dap.adapters.gdb or {
         type = "executable",
         command = "gdb",
         args = { "--interpreter=dap", "--eval-command", "set print pretty on" },
       }
 
-      -- Option B: codelldb setup (if installed via Mason)
-      dap.adapters.codelldb = {
-        type = "server",
-        port = "${port}",
-        executable = {
-          command = "codelldb",
-          args = { "--port", "${port}" },
-        },
-      }
-
-      -- DAP Configurations for Assembly
       dap.configurations.asm = {
         {
           name = "Debug Assembly Binary (gdb)",
@@ -139,7 +125,7 @@ return {
           request = "launch",
           program = function() return vim.fn.input("Path to executable: ", vim.fn.getcwd() .. "/", "file") end,
           cwd = "${workspaceFolder}",
-          stopAtBeginningOfMainSubprogram = true,
+          stopAtEntry = true,
         },
         {
           name = "Debug Assembly Binary (codelldb)",
@@ -153,29 +139,19 @@ return {
     end,
   },
 
-  -- 5. Formatters & Treesitter
+  -- 5. Formatters
   {
     "stevearc/conform.nvim",
     opts = {
       formatters_by_ft = { asm = { "asmfmt" } },
-      format_on_save = { timeout_ms = 2000, lsp_fallback = true },
     },
-  },
-  {
-    "nvim-treesitter/nvim-treesitter",
-    opts = function(_, opts)
-      if opts.ensure_installed ~= "all" then
-        opts.ensure_installed = opts.ensure_installed or {}
-        vim.list_extend(opts.ensure_installed, { "asm" })
-      end
-    end,
   },
 
   -- 6. Auto-install Mason Binaries (LSP, Formatter, Debugger)
   {
     "WhoIsSethDaniel/mason-tool-installer.nvim",
     opts = {
-      ensure_installed = { "asmfmt", "codelldb" },
+      ensure_installed = { "asm-lsp", "asmfmt", "codelldb" },
     },
   },
 }

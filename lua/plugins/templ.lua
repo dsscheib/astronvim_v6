@@ -1,31 +1,22 @@
--- if true then return {} end -- WARN: REMOVE THIS LINE TO ACTIVATE THIS FILE
-
 -- lua/plugins/templ.lua
 return {
-  -- 1. Import the official AstroNvim templ pack base
-  { import = "astrocommunity.pack.templ" },
-
-  -- 2. Configure conform.nvim to format using official `templ fmt` first, then `djlint`
+  -- 1. Configure conform.nvim to format using official `templ fmt` first, then `djlint_go`
   {
     "stevearc/conform.nvim",
     opts = {
-      formatters_by_ft = {
-        templ = { "templ", "djlint" },
-      },
       formatters = {
-        djlint = {
-          -- Pass flags so djlint correctly parses Go control structures in HTML
-          extra_args = { "--profile=golang", "--reformat" },
+        djlint_go = {
+          inherit = "djlint",
+          prepend_args = { "--profile=golang" },
         },
       },
-      format_on_save = {
-        timeout_ms = 2000,
-        lsp_fallback = true,
+      formatters_by_ft = {
+        templ = { "templ", "djlint_go" },
       },
     },
   },
 
-  -- 3. Extend LuaSnip to include HTML snippets in .templ buffers
+  -- 2. Extend LuaSnip to include HTML snippets in .templ buffers
   {
     "L3MON4D3/LuaSnip",
     opts = function(_, opts)
@@ -35,7 +26,7 @@ return {
     end,
   },
 
-  -- 4. Enable automatic compilation (`templ generate`) whenever a .templ file is saved
+  -- 3. Enable automatic compilation (`templ generate`) whenever a .templ file is saved
   {
     "AstroNvim/astrocore",
     opts = {
@@ -44,19 +35,18 @@ return {
           {
             event = "BufWritePost",
             pattern = "*.templ",
-            callback = function(args) vim.fn.jobstart { "templ", "generate", "--path", args.file } end,
+            callback = function(args) vim.fn.jobstart { "templ", "generate", "-f", args.file } end,
           },
         },
       },
     },
   },
 
-  -- 5. Auto-install required Mason tools (including tailwindcss-language-server for completion)
+  -- 4. Auto-install required Mason tools
   {
     "WhoIsSethDaniel/mason-tool-installer.nvim",
-    opts = function(_, opts)
-      opts.ensure_installed = opts.ensure_installed or {}
-      vim.list_extend(opts.ensure_installed, { "templ", "tailwindcss-language-server", "djlint" })
-    end,
+    opts = {
+      ensure_installed = { "templ", "djlint" },
+    },
   },
 }

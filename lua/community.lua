@@ -25,6 +25,9 @@ return {
   { import = "astrocommunity.pack.python.base" },
   { import = "astrocommunity.pack.python.basedpyright" },
   { import = "astrocommunity.pack.python.ruff" },
+  { import = "astrocommunity.editing-support.conform-nvim" },
+  { import = "astrocommunity.pack.templ" },
+  { import = "astrocommunity.motion.mini-surround" },
   -- { import = "astrocommunity.pack.ruby" },
   -- import/override with your plugins folder
 }

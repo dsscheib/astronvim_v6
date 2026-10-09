@@ -1,5 +1,3 @@
--- if true then return {} end -- WARN: REMOVE THIS LINE TO ACTIVATE THIS FILE
-
 -- lua/plugins/cpp.lua
 return {
   -- 1. Configure clangd with optimized C/C++ flags via AstroLSP
@@ -26,14 +24,11 @@ return {
     },
   },
 
-  -- 2. Clangd Extensions for AST inspection & inlay hints
+  -- 2. Clangd Extensions for AST inspection
   {
     "p00f/clangd_extensions.nvim",
-    lazy = true,
+    ft = { "c", "cpp", "objc", "objcpp", "cuda" },
     opts = {
-      inlay_hints = {
-        inline = true,
-      },
       ast = {
         role_icons = {
           type = "🪨",
@@ -55,22 +50,17 @@ return {
         c = { "clang-format" },
         cpp = { "clang-format" },
       },
-      format_on_save = {
-        timeout_ms = 2000,
-        lsp_fallback = true,
-      },
     },
   },
 
-  -- 4. Ensure C/C++ Treesitter parsers are installed
+  -- 4. Ensure C/C++ Treesitter parsers are installed via AstroCore
   {
-    "nvim-treesitter/nvim-treesitter",
-    opts = function(_, opts)
-      if opts.ensure_installed ~= "all" then
-        opts.ensure_installed = opts.ensure_installed or {}
-        vim.list_extend(opts.ensure_installed, { "c", "cpp", "cmake", "make" })
-      end
-    end,
+    "AstroNvim/astrocore",
+    opts = {
+      treesitter = {
+        ensure_installed = { "c", "cpp", "cmake", "make" },
+      },
+    },
   },
 
   -- 5. Auto-install Mason Binaries (LSP, Formatter, Debugger)
