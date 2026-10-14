@@ -28,6 +28,7 @@ return {
   { import = "astrocommunity.editing-support.conform-nvim" },
   { import = "astrocommunity.pack.templ" },
   { import = "astrocommunity.motion.mini-surround" },
+  { import = "astrocommunity.completion.copilot-lua" },
   -- { import = "astrocommunity.pack.ruby" },
   -- import/override with your plugins folder
 }

@@ -76,7 +76,29 @@ Other `.html` files keep the HTML filetype; `.tmpl` and `.gotmpl` retain Go-temp
 support. Saved `.templ` files generate Go code from the nearest `go.mod` directory;
 failures are reported, and repeated saves queue one subsequent generation.
 
-## 3. Work with assembly
+## 3. Use GitHub Copilot
+
+Copilot inline suggestions are enabled through AstroCommunity's `copilot-lua`
+module. Lazy installs the pinned plugin on startup. Open a source file, then run:
+
+```vim
+:Copilot auth
+```
+
+Follow GitHub's sign-in prompts. Use `:Copilot auth info` to check authentication
+and `Alt+L` to accept a suggestion. Network access and an account with Copilot
+access are required. The plugin's native language server downloads on first use;
+Node.js 22+ is needed if you select its Node.js server instead.
+
+The standalone `copilot` CLI is installed by the workstation setup's `copilot`
+stage. Authenticate the CLI separately with `/login` after launching `copilot`.
+The editor plugin runs independently of that CLI. Setup does not sign in, send
+prompts, or verify authenticated suggestions.
+
+See [Copilot plugin documentation](https://github.com/zbirenbaum/copilot.lua)
+and [GitHub Copilot CLI installation](https://docs.github.com/en/copilot/how-tos/copilot-cli/set-up-copilot-cli/install-copilot-cli).
+
+## 4. Work with assembly
 
 
 `.asm`, `.s`, and `.S` all receive the `asm` filetype, the assembly Treesitter
@@ -147,7 +169,7 @@ separately. This uses `gdb-multiarch` with DAP support (GDB 14+ with Python supp
 Object-only tasks do not link firmware or execute cross-compiled code; use the
 project's Make/CMake/linker-script task for a complete firmware image.
 
-## 4. Run repository checks
+## 5. Run repository checks
 
 ```sh
 bash scripts/check.sh
