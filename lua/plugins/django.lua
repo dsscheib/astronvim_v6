@@ -5,6 +5,7 @@ return {
     "AstroNvim/astrocore",
     ---@type AstroCoreOpts
     opts = {
+      filetypes = { extension = { html = function(path) return require("django_filetype").detect(path) end } },
       treesitter = {
         ensure_installed = { "python", "htmldjango", "html" },
       },
@@ -19,6 +20,8 @@ return {
       servers = { "djlsp" },
       config = {
         djlsp = {
+          filetypes = { "htmldjango" },
+          root_markers = { "manage.py", ".git" },
           init_options = {
             django_settings_module = "",
             env_directories = { "venv", ".venv", "env" },

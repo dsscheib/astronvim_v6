@@ -30,7 +30,7 @@ return {
           {
             event = "BufWritePost",
             pattern = "*.templ",
-            callback = function(args) vim.fn.jobstart { "templ", "generate", "-f", args.file } end,
+            callback = function(args) require("templ_generate").generate(args.buf) end,
           },
         },
       },

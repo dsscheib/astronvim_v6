@@ -8,7 +8,7 @@ return {
       config = {
         clangd = {
           capabilities = {
-            offsetEncoding = { "utf-16" }, -- Fixes UTF-8/UTF-16 encoding offset warnings
+            general = { positionEncodings = { "utf-16" } }, -- Standard LSP position encoding
           },
           cmd = {
             "clangd",
@@ -16,7 +16,7 @@ return {
             "--clang-tidy", -- Enable static analysis linting
             "--header-insertion=iwyu", -- Include What You Use header insertion
             "--completion-style=detailed", -- Show parameter types in autocompletion
-            "--function-arg-placeholders", -- Insert parameter placeholders on completion
+            "--function-arg-placeholders=true", -- Insert parameter placeholders on completion
             "--fallback-style=llvm", -- Default formatting fallback
           },
         },

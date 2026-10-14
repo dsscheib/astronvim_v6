@@ -1,33 +1,83 @@
-# AstroNvim Setup
+# AstroNvim Configuration
 
-**NOTE:** This is for AstroNvim v6+
+Personal [AstroNvim v6](https://github.com/AstroNvim/AstroNvim) configuration for
+Neovim, with language support for C/C++, Go, Python/Django, templ, web development,
+and x86-64/ARM assembly.
 
-This is based off of the template for getting started with [AstroNvim](https://github.com/AstroNvim/AstroNvim)
+## 1. Install
 
-## 🛠️ Installation
+Install Neovim and Git first. Initial setup needs network access to download
+plugins, Mason tools, and Treesitter parsers. Language runtimes and native build
+tools must be available on `PATH`; Mason does not install system compilers.
 
-#### Make a backup of your current nvim and shared folder
+Close Neovim, then back up the existing configuration and runtime directories.
+This block respects XDG paths, creates a unique backup, and stops if a move fails.
+The backup location is printed before any files move.
 
-```shell
-mv ~/.config/nvim ~/.config/nvim.bak
-mv ~/.local/share/nvim ~/.local/share/nvim.bak
-mv ~/.local/state/nvim ~/.local/state/nvim.bak
-mv ~/.cache/nvim ~/.cache/nvim.bak
+```bash
+(
+  set -euo pipefail
+  backup=$(mktemp -d "$HOME/nvim-backup.XXXXXX")
+  printf 'Neovim backup: %s\n' "$backup"
+  config=${XDG_CONFIG_HOME:-$HOME/.config}
+  data=${XDG_DATA_HOME:-$HOME/.local/share}
+  state=${XDG_STATE_HOME:-$HOME/.local/state}
+  cache=${XDG_CACHE_HOME:-$HOME/.cache}
+  for kind in config data state cache; do
+    source=${!kind}/nvim
+    if [[ -e $source || -L $source ]]; then
+      mv -- "$source" "$backup/$kind"
+    fi
+  done
+  mkdir -p -- "$config"
+  git clone https://github.com/dsscheib/astronvim_v6.git "$config/nvim"
+)
 ```
 
-#### Clone the repository
+Start `nvim` to initialize plugins and parsers. Then install and check the
+configured Mason tools:
 
-```shell
-git clone https://github.com/dsscheib/astronvim_v6.git ~/.config/nvim
+```bash
+cd "${XDG_CONFIG_HOME:-$HOME/.config}/nvim"
+bash scripts/setup.sh --install
 ```
 
-#### Start Neovim
+Installation failures return a nonzero exit status. Inspect `:MasonLog` for tool
+failures and `:checkhealth` for provider or parser problems.
 
-```shell
-nvim --headless -c 'quitall'
+## 2. Verify language support
+
+A successful startup alone does not verify language servers or formatters.
+Run the tool check without requesting installation:
+
+```bash
+bash scripts/setup.sh
 ```
 
-## Assembly: x86-64, ARM32/Thumb and AArch64
+For an existing file in a real project, also check its filetype, LSP attachment,
+and configured formatter executables. Pass the expected filetype and server:
+
+```bash
+bash scripts/setup.sh --file /path/to/project/main.go go gopls
+bash scripts/setup.sh --file /path/to/project/main.cpp cpp clangd
+bash scripts/setup.sh --file /path/to/project/templates/page.html htmldjango djlsp
+bash scripts/setup.sh --file /path/to/project/component.templ templ templ
+bash scripts/setup.sh --file /path/to/project/main.S asm asm_lsp
+```
+
+Use a project with the appropriate root markers, such as `go.mod`, `manage.py`,
+`compile_commands.json`, or `.asm-lsp.toml`. The check waits up to 30 seconds for
+the named server. It checks formatter availability without modifying the file.
+It does not verify formatter output, debugger connections, or every language pack.
+
+Django `.html` files under a `templates/` directory are recognized when an
+ancestor contains `manage.py`, stopping at the nearest Git repository boundary.
+Other `.html` files keep the HTML filetype; `.tmpl` and `.gotmpl` retain Go-template
+support. Saved `.templ` files generate Go code from the nearest `go.mod` directory;
+failures are reported, and repeated saves queue one subsequent generation.
+
+## 3. Work with assembly
+
 
 `.asm`, `.s`, and `.S` all receive the `asm` filetype, the assembly Treesitter
 parser, and asm-lsp support. A filename extension does not specify its CPU or
@@ -62,7 +112,7 @@ ARM/Thumb mode is an ARM32 setting.
 On Pop!_OS/Ubuntu, install the backends you need:
 
 ```sh
-sudo apt-get install nasm gcc-arm-none-eabi gcc-aarch64-linux-gnu gdb-multiarch
+sudo apt-get install build-essential nasm gcc-arm-none-eabi gcc-aarch64-linux-gnu gdb gdb-multiarch
 ```
 
 Mason installs `asm-lsp` and `codelldb`; it does not install native/cross compilers,
@@ -97,13 +147,15 @@ separately. This uses `gdb-multiarch` with DAP support (GDB 14+ with Python supp
 Object-only tasks do not link firmware or execute cross-compiled code; use the
 project's Make/CMake/linker-script task for a complete firmware image.
 
-### Assembly checks
+## 4. Run repository checks
 
 ```sh
-bash scripts/check_assembly.sh
+bash scripts/check.sh
 ```
 
-Checks validate extensions, toolchain/CPU/mode arguments, `.S` preprocessing,
+Offline checks cover Django/Go/HTML filetypes, headless bootstrap failures, templ
+generation errors and queued saves, plus assembly extensions, toolchain/CPU/mode
+arguments, `.S` preprocessing,
 missing-tool errors, path quoting, formatting isolation, and native-run guards.
 They compile x86-64, ARM32, and AArch64 objects when those compilers are present. They do
 not run assembly programs, install dependencies, or attach to a debugger.
