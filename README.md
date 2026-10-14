@@ -76,7 +76,60 @@ Other `.html` files keep the HTML filetype; `.tmpl` and `.gotmpl` retain Go-temp
 support. Saved `.templ` files generate Go code from the nearest `go.mod` directory;
 failures are reported, and repeated saves queue one subsequent generation.
 
-## 3. Use GitHub Copilot
+## 3. Work with Rust and tests
+
+The Rust pack uses Rustaceanvim with `rust-analyzer` for completion, hover,
+navigation, refactoring, inlay hints, and `rustfmt` formatting. Checks use Clippy.
+Cargo.toml has TOML support and crate management through `crates.nvim`.
+
+Workstation setup's `languages` stage explicitly installs and verifies
+`rust-analyzer`, `rustfmt`, Clippy, and standard-library sources (`rust-src`) for
+its selected Rust toolchain. For an independently installed toolchain, run:
+
+```bash
+rustup component add rust-analyzer rustfmt clippy rust-src
+bash scripts/setup.sh --install
+```
+
+Mason supplies CodeLLDB for debugging. In a Cargo project, use
+`:RustLsp runnables`, `:RustLsp testables`, and `:RustLsp debuggables` for build/run,
+test, and debugging workflows.
+
+Neotest is enabled with the adapters supplied by your language packs:
+
+| Language / framework | Adapter |
+| :--- | :--- |
+| Rust / Cargo tests | Rustaceanvim |
+| Go / standard tests | neotest-golang |
+| Python / pytest or unittest | neotest-python |
+| JavaScript/TypeScript / Jest | neotest-jest |
+
+With the default Space leader, `Space Tt` runs the nearest test, `Space Tf` runs
+the current file, `Space Tp` runs the project, `Space Td` debugs a test, and
+`Space T Enter` opens the test summary. Install each project's runner and
+dependencies in its normal environment. Vitest and C/C++ test frameworks need
+appropriate additional adapters; other language packs do not automatically gain
+Neotest support.
+
+Run the real Rust integration check after tools and plugins are installed:
+
+```bash
+bash scripts/check_rust.sh
+```
+
+It creates a temporary Cargo project with no external dependencies, then checks
+LSP completion/hover/navigation/refactoring, inlay hints, a deliberate Clippy
+diagnostic, formatting,
+Cargo build/run/test, Neotest execution, and a CodeLLDB breakpoint and variable
+evaluation. It executes only its fixture program, uses Cargo offline, and removes
+the project afterward. Copilot is suppressed for this check. The regular
+`scripts/check.sh` remains an offline syntax and regression check.
+
+Sources: [Rustup components](https://rust-lang.github.io/rustup/concepts/components.html),
+[Rustaceanvim](https://github.com/mrcjkb/rustaceanvim), and
+[Neotest](https://github.com/nvim-neotest/neotest).
+
+## 4. Use GitHub Copilot
 
 Copilot inline suggestions are enabled through AstroCommunity's `copilot-lua`
 module. Lazy installs the pinned plugin on startup. Open a source file, then run:
@@ -98,7 +151,7 @@ prompts, or verify authenticated suggestions.
 See [Copilot plugin documentation](https://github.com/zbirenbaum/copilot.lua)
 and [GitHub Copilot CLI installation](https://docs.github.com/en/copilot/how-tos/copilot-cli/set-up-copilot-cli/install-copilot-cli).
 
-## 4. Work with assembly
+## 5. Work with assembly
 
 
 `.asm`, `.s`, and `.S` all receive the `asm` filetype, the assembly Treesitter
@@ -169,7 +222,7 @@ separately. This uses `gdb-multiarch` with DAP support (GDB 14+ with Python supp
 Object-only tasks do not link firmware or execute cross-compiled code; use the
 project's Make/CMake/linker-script task for a complete firmware image.
 
-## 5. Run repository checks
+## 6. Run repository checks
 
 ```sh
 bash scripts/check.sh
