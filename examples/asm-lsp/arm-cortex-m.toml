@@ -1,0 +1,10 @@
+[default_config]
+assembler = "gas"
+instruction_set = "arm"
+
+[default_config.opts]
+compiler = "arm-none-eabi-gcc"
+diagnostics = true
+# Use the project's compile_commands.json / compile_flags.txt for diagnostics.
+# This avoids guessing a CPU, instruction mode or preprocessor for mixed files.
+default_diagnostics = false

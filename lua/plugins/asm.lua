@@ -1,157 +1,71 @@
--- lua/plugins/asm.lua
+-- NASM and GNU assembly for x86-64, ARM32/Thumb and AArch64.
+-- Architecture/dialect come from the project, not from the filename extension.
+vim.treesitter.language.register("asm", "goasm")
+
 return {
-  -- 1. Ensure filetype auto-detection and Treesitter parser for assembly files
   {
     "AstroNvim/astrocore",
-    ---@type AstroCoreOpts
     opts = {
-      filetypes = {
-        extension = {
-          asm = "asm",
-          s = "asm",
-          S = "asm",
-        },
-      },
-      treesitter = {
-        ensure_installed = { "asm" },
-      },
+      filetypes = { extension = { asm = "asm", s = "asm", S = "asm" } },
+      treesitter = { ensure_installed = { "asm" } },
     },
   },
-
-  -- 2. Configure asm-lsp with root markers
   {
     "AstroNvim/astrolsp",
-    ---@type AstroLSPOpts
     opts = {
+      servers = { "asm_lsp" },
       config = {
         asm_lsp = {
-          root_markers = { ".asm-lsp.toml", "Makefile", ".git" },
+          filetypes = { "asm", "goasm" },
+          root_markers = { ".asm-lsp.toml", "compile_commands.json", "compile_flags.txt", "Makefile", ".git" },
         },
       },
     },
   },
-
-  -- 3. Task Runner Configuration (overseer.nvim)
   {
     "stevearc/overseer.nvim",
     cmd = { "OverseerRun", "OverseerToggle", "OverseerTaskAction" },
-    opts = {
-      templates = { "builtin" },
-    },
+    opts = { templates = { "builtin" } },
     config = function(_, opts)
       local overseer = require "overseer"
       overseer.setup(opts)
-
-      -- Task template for x86_64 NASM
-      overseer.register_template {
-        name = "Assembly: Build & Run (x86_64 NASM)",
-        desc = "Assembles with nasm, links with ld (with debug symbols), and runs",
-        tags = { overseer.TAG.BUILD },
-        params = {},
-        builder = function()
-          local file = vim.fn.expand "%:p"
-          local filename_no_ext = vim.fn.expand "%:p:r"
-          local obj_file = filename_no_ext .. ".o"
-
-          return {
-            cmd = { "sh" },
-            args = {
-              "-c",
-              string.format(
-                "nasm -f elf64 -g -F dwarf %s -o %s && ld %s -o %s && %s",
-                vim.fn.shellescape(file),
-                vim.fn.shellescape(obj_file),
-                vim.fn.shellescape(obj_file),
-                vim.fn.shellescape(filename_no_ext),
-                vim.fn.shellescape(filename_no_ext)
-              ),
-            },
-            components = { "default_component" },
-          }
-        end,
-        condition = {
-          filetype = { "asm" },
-        },
-      }
-
-      -- Task template for GCC/GAS (x86-64 or ARM/AArch64)
-      overseer.register_template {
-        name = "Assembly: Build & Run (GAS / GCC)",
-        desc = "Assembles and links using gcc with debug flags (-g), then runs",
-        tags = { overseer.TAG.BUILD },
-        params = {},
-        builder = function()
-          local file = vim.fn.expand "%:p"
-          local filename_no_ext = vim.fn.expand "%:p:r"
-
-          return {
-            cmd = { "sh" },
-            args = {
-              "-c",
-              string.format(
-                "gcc -g -no-pie %s -o %s && %s",
-                vim.fn.shellescape(file),
-                vim.fn.shellescape(filename_no_ext),
-                vim.fn.shellescape(filename_no_ext)
-              ),
-            },
-            components = { "default_component" },
-          }
-        end,
-        condition = {
-          filetype = { "asm" },
-        },
-      }
+      for _, template in ipairs(require("assembly").templates(overseer.TAG.BUILD)) do overseer.register_template(template) end
     end,
   },
-
-  -- 4. Debug Adapter Protocol Setup (nvim-dap & codelldb / gdb)
   {
     "mfussenegger/nvim-dap",
     optional = true,
     opts = function()
       local dap = require "dap"
-
       dap.adapters.gdb = dap.adapters.gdb or {
-        type = "executable",
-        command = "gdb",
+        type = "executable", command = "gdb",
         args = { "--interpreter=dap", "--eval-command", "set print pretty on" },
       }
-
+      dap.adapters.gdb_remote = function(callback)
+        assert(vim.fn.executable "gdb-multiarch" == 1, "Install gdb-multiarch for ARM/cross-target debugging")
+        callback { type = "executable", command = "gdb-multiarch", args = { "--interpreter=dap" } }
+      end
+      local function program() return vim.fn.input("Path to linked executable/firmware ELF: ", vim.fn.getcwd() .. "/", "file") end
       dap.configurations.asm = {
+        { name = "Assembly: Debug native executable (gdb)", type = "gdb", request = "launch", program = program, cwd = "${workspaceFolder}" },
+        { name = "Assembly: Debug native executable (codelldb)", type = "codelldb", request = "launch", program = program, cwd = "${workspaceFolder}", stopOnEntry = true },
         {
-          name = "Debug Assembly Binary (gdb)",
-          type = "gdb",
-          request = "launch",
-          program = function() return vim.fn.input("Path to executable: ", vim.fn.getcwd() .. "/", "file") end,
+          name = "Assembly: Attach ARM/cross target (GDB server)", type = "gdb_remote", request = "attach", program = program,
+          target = function() return vim.fn.input("GDB server host:port: ", "localhost:3333") end,
           cwd = "${workspaceFolder}",
-          stopOnEntry = true,
-        },
-        {
-          name = "Debug Assembly Binary (codelldb)",
-          type = "codelldb",
-          request = "launch",
-          program = function() return vim.fn.input("Path to executable: ", vim.fn.getcwd() .. "/", "file") end,
-          cwd = "${workspaceFolder}",
-          stopOnEntry = true,
         },
       }
     end,
   },
-
-  -- 5. Formatters
   {
     "stevearc/conform.nvim",
     opts = {
-      formatters_by_ft = { asm = { "asmfmt" } },
+      -- asmfmt is a Go/Plan 9 formatter. Never autoformat NASM/GAS with it.
+      formatters_by_ft = { asm = {}, goasm = { "asmfmt" } },
     },
   },
-
-  -- 6. Auto-install Mason Binaries (LSP, Formatter, Debugger)
   {
     "WhoIsSethDaniel/mason-tool-installer.nvim",
-    opts = {
-      ensure_installed = { "asm-lsp", "asmfmt", "codelldb" },
-    },
+    opts = { ensure_installed = { "asm-lsp", "codelldb" } },
   },
 }
