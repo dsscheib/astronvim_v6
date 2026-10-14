@@ -1,4 +1,9 @@
 -- lua/plugins/gotmpl.lua
+
+-- Parse html.gotmpl buffers with the gotmpl parser; HTML is injected into the
+-- template text by after/queries/gotmpl/injections.scm
+vim.treesitter.language.register("gotmpl", "html.gotmpl")
+
 return {
   -- 1. Map .tmpl extension to html.gotmpl filetype & install Treesitter parsers via AstroCore
   {
@@ -23,9 +28,6 @@ return {
     ---@type AstroLSPOpts
     opts = {
       config = {
-        html = {
-          filetypes = { "html", "html.gotmpl" },
-        },
         gopls = {
           filetypes = { "go", "gomod", "gowork", "gotmpl", "html.gotmpl" },
           settings = {
@@ -36,6 +38,17 @@ return {
         },
       },
     },
+  },
+
+  -- Extend (rather than replace) html's filetypes, since django.lua adds to the same list
+  {
+    "AstroNvim/astrolsp",
+    opts = function(_, opts)
+      opts.config = opts.config or {}
+      opts.config.html = opts.config.html or {}
+      local html = opts.config.html
+      html.filetypes = require("astrocore").list_insert_unique(html.filetypes or { "html" }, { "html.gotmpl" })
+    end,
   },
 
   -- 3. Configure conform.nvim for Go template formatting with djlint

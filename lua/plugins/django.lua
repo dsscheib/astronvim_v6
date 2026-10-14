@@ -18,9 +18,6 @@ return {
     opts = {
       servers = { "djlsp" },
       config = {
-        html = {
-          filetypes = { "html", "htmldjango" },
-        },
         djlsp = {
           init_options = {
             django_settings_module = "",
@@ -29,6 +26,17 @@ return {
         },
       },
     },
+  },
+
+  -- Extend (rather than replace) html's filetypes, since gotmpl.lua adds to the same list
+  {
+    "AstroNvim/astrolsp",
+    opts = function(_, opts)
+      opts.config = opts.config or {}
+      opts.config.html = opts.config.html or {}
+      local html = opts.config.html
+      html.filetypes = require("astrocore").list_insert_unique(html.filetypes or { "html" }, { "htmldjango" })
+    end,
   },
 
   -- 3. Configure conform.nvim for formatting with djlint

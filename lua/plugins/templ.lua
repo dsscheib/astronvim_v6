@@ -1,17 +1,12 @@
 -- lua/plugins/templ.lua
 return {
-  -- 1. Configure conform.nvim to format using official `templ fmt` first, then `djlint_go`
+  -- 1. Configure conform.nvim to format with the official `templ fmt`
+  --    (djlint re-indents templ files with spaces and fights `templ fmt`)
   {
     "stevearc/conform.nvim",
     opts = {
-      formatters = {
-        djlint_go = {
-          inherit = "djlint",
-          prepend_args = { "--profile=golang" },
-        },
-      },
       formatters_by_ft = {
-        templ = { "templ", "djlint_go" },
+        templ = { "templ" },
       },
     },
   },
@@ -46,7 +41,7 @@ return {
   {
     "WhoIsSethDaniel/mason-tool-installer.nvim",
     opts = {
-      ensure_installed = { "templ", "djlint" },
+      ensure_installed = { "templ" },
     },
   },
 }
