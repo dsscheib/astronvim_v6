@@ -69,11 +69,12 @@ the assembly root markers listed above. A `.asm-lsp.toml` in that root takes
 precedence over `$XDG_CONFIG_HOME/asm-lsp/.asm-lsp.toml` (normally
 `~/.config/asm-lsp/.asm-lsp.toml`). The local file replaces the global config.
 
-The first matching `[[project]]` entry wins, matching asm-lsp's declaration-order
-behavior. Entries can select a file or directory; relative paths are resolved
-against the project root. Files outside those entries use `[default_config]`.
-Put more specific entries before broader directories. Config edits take effect
-on the next formatting request after saving the TOML file.
+The formatter resolver matches asm-lsp 0.10.1 precedence: an exact file entry
+wins over directory entries, then the deepest matching directory wins. Paths
+are canonicalized before matching, and relative paths are resolved against the
+project root. Declaration order does not affect those choices. Files outside
+all project entries use `[default_config]`. Config edits take effect on the
+next formatting request after saving the TOML file.
 
 | Effective settings | Formatter |
 | --- | --- |
@@ -130,6 +131,26 @@ Both formatters consume buffer contents through stdin, so formatting
 does not require saving source edits first. Whole-buffer formatting is supported;
 no formatter-specific range arguments are configured. The configuration follows
 your existing format-on-save policy rather than enabling a new one.
+
+### Config location and the defaults warning
+
+Place the file at the repository root, for example
+`learn_asm/.asm-lsp.toml` for `learn_asm/ch03/myexit.s`. The installed asm-lsp
+0.10.1 expects this structure for GNU x86-64 assembly:
+
+```toml
+[default_config]
+version = "0.10.1"
+assembler = "gas"
+instruction_set = "x86-64"
+```
+
+Separate `[assembler]` and `[instruction_set]` sections do not configure those
+fields. In 0.10.1 the warning “No .asm-lsp.toml config file found” can also appear
+when the effective settings equal the server defaults, even after reading a
+file. Supplying the version under `[default_config]` distinguishes this config
+from its defaults. Restart the server/Neovim after changing its settings. The
+formatter resolver, separately, rereads saved config content on demand.
 
 ## Building the current file
 

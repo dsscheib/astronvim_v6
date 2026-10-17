@@ -4,6 +4,13 @@ Personal [AstroNvim v6](https://github.com/AstroNvim/AstroNvim) configuration fo
 Neovim, with language support for C/C++, Go, Python/Django, templ, web development,
 and x86-64/ARM assembly.
 
+## Reference guides
+
+Start with [docs/README.md](docs/README.md) for workflow guides covering every
+configured plugin, or use the [complete plugin index](docs/PLUGIN_INDEX.md) to
+look up a plugin by name. The guides cover commands, inherited keybindings,
+project requirements, and troubleshooting.
+
 ## 1. Install
 
 Install Neovim and Git first. Initial setup needs network access to download
@@ -210,9 +217,10 @@ project rather than installing one global asm-lsp configuration for all targets.
 
 ### Formatting and debugging
 
-Generic NASM/GAS buffers do not use `asmfmt`, which is a Go/Plan 9 formatter.
-Explicit Go assembly may use the `goasm` filetype and an independently installed
-`asmfmt` binary. It is not applied automatically to ARM or x86-64 NASM/GAS files.
+Assembly formatting follows `.asm-lsp.toml`: NASM with an explicit x86 target
+uses `nasmfmt`, Go assembly uses Go/Plan 9 `asmfmt`, and GAS/other unsupported
+dialects select no external formatter. See the [assembly guide](docs/ASSEMBLY_GUIDE.md)
+for installation, project overrides, and string-literal protection.
 
 The native GDB/codelldb configurations launch linked executables for the host.
 For ARM firmware or an emulated cross target, select
@@ -231,6 +239,7 @@ bash scripts/check.sh
 Offline checks cover Django/Go/HTML filetypes, headless bootstrap failures, templ
 generation errors and queued saves, plus assembly extensions, toolchain/CPU/mode
 arguments, `.S` preprocessing,
-missing-tool errors, path quoting, formatting isolation, and native-run guards.
+missing-tool errors, path quoting, formatter project precedence, test/TODO navigation
+isolation, and native-run guards.
 They compile x86-64, ARM32, and AArch64 objects when those compilers are present. They do
 not run assembly programs, install dependencies, or attach to a debugger.

@@ -4,6 +4,7 @@ package.path = root .. "/lua/?.lua;" .. package.path
 local formatting = require "assembly_format"
 local directory = vim.fn.tempname()
 vim.fn.mkdir(directory .. "/nested", "p")
+vim.fn.mkdir(directory .. "/nested/deeper", "p")
 vim.fn.mkdir(directory .. "/nested-other", "p")
 vim.fn.mkdir(directory .. "/config", "p")
 local old_config = vim.env.XDG_CONFIG_HOME
@@ -49,11 +50,31 @@ local ok, err = xpcall(function()
     'instruction_set = "arm64"',
   }
   check("nested/test.asm", { "nasmfmt" })
-  check("nested/special.s", { "nasmfmt" }) -- first match, as in asm-lsp
+  check("nested/special.s", { "asmfmt" }) -- exact file overrides its parent
   check("nested-other/test.asm", {}) -- directory boundary
   check("one.s", { "asmfmt" }) -- exact file match
   check("plain.asm", {})
   check("plain.asm", {}, "goasm") -- explicit config overrides filetype
+  local projects = {
+    { 'path = "nested"', 'assembler = "nasm"', 'instruction_set = "x86-64"' },
+    { 'path = "nested/deeper"', 'assembler = "go"', 'instruction_set = "arm64"' },
+    { 'path = "nested/deeper/exact.s"', 'assembler = "gas"', 'instruction_set = "arm"' },
+  }
+  -- File, child-directory, parent-directory, and fallback choices must not
+  -- depend on the declaration order in a mixed-dialect project.
+  for _, order in ipairs { { 1, 2, 3 }, { 1, 3, 2 }, { 2, 1, 3 }, { 2, 3, 1 }, { 3, 1, 2 }, { 3, 2, 1 } } do
+    local lines = { "[default_config]", 'assembler = "gas"', 'instruction_set = "x86-64"' }
+    for _, index in ipairs(order) do
+      lines[#lines + 1] = "[[project]]"
+      vim.list_extend(lines, projects[index])
+    end
+    write(lines)
+    check("nested/deeper/exact.s", {})
+    check("nested/deeper/other.s", { "asmfmt" })
+    check("nested/other.s", { "nasmfmt" })
+    check("nested-other/other.s", {})
+    check("plain.asm", {})
+  end
   for _, arch in ipairs { "x86", "x86-64", "x86/x86-64" } do
     write { "[default_config]", 'assembler = "nasm"', 'instruction_set = "' .. arch .. '"' }
     check("plain.asm", { "nasmfmt" })
@@ -113,6 +134,8 @@ local ok, err = xpcall(function()
         ),
         "Formatting changed machine code"
       )
+    else
+      print "SKIP: NASM machine-code comparison (nasm not on PATH)"
     end
     local rejected
     formatting.nasm_format(nil, nil, { 'message: db "hello,world  !", 0' }, function(error, output)
@@ -120,7 +143,10 @@ local ok, err = xpcall(function()
       assert(output == nil, "Unsafe formatting returned replacement lines")
     end)
     assert(rejected and rejected:find("string literal", 1, true), "Literal corruption was not rejected")
-    count = count + 3
+    count = count + 2
+    if vim.fn.executable "nasm" == 1 then count = count + 1 end
+  else
+    print "SKIP: real NASM formatter and machine-code checks (nasmfmt not on PATH)"
   end
 end, debug.traceback)
 vim.env.XDG_CONFIG_HOME = old_config

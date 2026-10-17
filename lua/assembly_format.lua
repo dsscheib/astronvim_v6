@@ -32,17 +32,22 @@ local function canonical(path) return (vim.uv or vim.loop).fs_realpath(path) or 
 
 local function project_settings(config, directory, filename)
   if config.project ~= nil and type(config.project) ~= "table" then return end
-  -- asm-lsp uses the FIRST matching project, not the most specific one.
+  -- asm-lsp 0.10.1 prefers exact files, then child directories over parents.
+  local selected, selected_length
   for _, project in ipairs(config.project or {}) do
     if type(project) ~= "table" or type(project.path) ~= "string" then return end
     local path = project.path
     if not vim.startswith(path, "/") then path = directory .. "/" .. path end
     path = canonical(path)
-    if filename == path or (vim.fn.isdirectory(path) == 1 and vim.startswith(filename, path .. "/")) then
-      return project
+    if filename == path and vim.fn.filereadable(path) == 1 then return project end
+    local prefix = path:sub(-1) == "/" and path or (path .. "/")
+    if vim.fn.isdirectory(path) == 1 and vim.startswith(filename, prefix) then
+      if not selected_length or #path > selected_length then
+        selected, selected_length = project, #path
+      end
     end
   end
-  return config.default_config
+  return selected or config.default_config
 end
 
 function M.formatters(bufnr)

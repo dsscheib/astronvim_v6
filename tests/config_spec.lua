@@ -85,6 +85,43 @@ local ok, message = xpcall(function()
   package.loaded.conform.get_formatter_info = function() return { available = false, available_msg = "fixture" } end
   check(not pcall(checks.file, path, "templ", "fixture"), "Missing formatter accepted")
   vim.wait, vim.lsp.get_clients = wait, clients
+  -- Apply the user override to both inherited mapping outcomes: late-loading
+  -- either consumer must not change which navigation API these keys invoke.
+  local calls = {}
+  package.loaded.neotest = {
+    jump = {
+      prev = function() calls[#calls + 1] = "previous test" end,
+      next = function() calls[#calls + 1] = "next test" end,
+    },
+  }
+  package.loaded["todo-comments"] = {
+    jump_prev = function() calls[#calls + 1] = "previous TODO" end,
+    jump_next = function() calls[#calls + 1] = "next TODO" end,
+  }
+  local navigation = dofile(root .. "/lua/plugins/navigation.lua")
+  for _, inherited in ipairs { "test", "TODO" } do
+    local previous_tab, next_tab = {}, {}
+    local opts = {
+      mappings = {
+        n = {
+          ["[t"] = previous_tab,
+          ["]t"] = next_tab,
+          ["[T"] = { function() error("Inherited " .. inherited .. " mapping won") end },
+          ["]T"] = { function() error("Inherited " .. inherited .. " mapping won") end },
+        },
+      },
+    }
+    navigation.opts(nil, opts)
+    calls = {}
+    for _, key in ipairs { "[T", "]T", "[n", "]n" } do
+      opts.mappings.n[key][1]()
+    end
+    check(
+      vim.deep_equal(calls, { "previous test", "next test", "previous TODO", "next TODO" }),
+      "Test/TODO navigation conflict"
+    )
+    check(opts.mappings.n["[t"] == previous_tab and opts.mappings.n["]t"] == next_tab, "Tab navigation was overwritten")
+  end
 end, debug.traceback)
 vim.fn.delete(directory, "rf")
 if not ok then error(message) end
