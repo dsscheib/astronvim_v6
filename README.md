@@ -106,10 +106,11 @@ Mason supplies CodeLLDB for debugging. In a Cargo project, use
 `:RustLsp runnables`, `:RustLsp testables`, and `:RustLsp debuggables` for build/run,
 test, and debugging workflows.
 
-Neotest is enabled with the adapters supplied by your language packs:
+Neotest is enabled with language-pack adapters and the local C++ GoogleTest adapter:
 
 | Language / framework | Adapter |
 | :--- | :--- |
+| C++ / GoogleTest | neotest-gtest |
 | Rust / Cargo tests | Rustaceanvim |
 | Go / standard tests | neotest-golang |
 | Python / pytest or unittest | neotest-python |
@@ -118,9 +119,28 @@ Neotest is enabled with the adapters supplied by your language packs:
 With the default Space leader, `Space Tt` runs the nearest test, `Space Tf` runs
 the current file, `Space Tp` runs the project, `Space Td` debugs a test, and
 `Space T Enter` opens the test summary. Install each project's runner and
-dependencies in its normal environment. Vitest and C/C++ test frameworks need
+dependencies in its normal environment. Vitest and other test frameworks need
 appropriate additional adapters; other language packs do not automatically gain
 Neotest support.
+
+For C++ GoogleTest projects, build a Debug executable with CMake first. In the
+Neotest summary, mark the file or directory with `m`, then press `C` or run
+`:ConfigureGtest` in that buffer to select the test executable. Use the Neotest
+keys above to run tests or debug with CodeLLDB. Rebuild after source changes;
+the adapter does not compile automatically. Discovery recognizes `test_*.cpp`
+and `*_test.cpp` (plus supported C++ extensions). `TEST` and `TEST_F` are
+supported; parameterized `TEST_P` execution is not.
+
+C uses Unity through separate Overseer Configure, Build, and Run tasks backed by
+CMake/CTest. Open a C buffer and select them with `:OverseerRun`; the default
+CTest filter is `^unity_`. See the [C and C++ test examples](examples/testing/README.md)
+for both setups and project-local framework dependencies.
+
+Run `bash scripts/check_c_testing.sh` to build temporary Unity/GoogleTest projects
+and verify execution, failure reporting, Neotest discovery, and CodeLLDB debugging.
+This requires installed plugins, the C++ parser, native compilers, CMake/CTest,
+and CodeLLDB; CMake downloads pinned frameworks unless existing source checkouts
+are supplied as described in the examples.
 
 Run the real Rust integration check after tools and plugins are installed:
 

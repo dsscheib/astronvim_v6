@@ -51,10 +51,19 @@ are separate tools even though they use related configuration.
 
 ## Build, tests, and debugging
 
-Run Make/CMake or the project's normal build in `F7`'s terminal. This override
-does not define a C/C++ build task or Neotest adapter. Overseer can expose
-applicable builtin tasks, but project build discovery is separate from the
-assembly-only templates added by this repository.
+C++ GoogleTest projects use `neotest-gtest`. Build the test executable first,
+open the Neotest summary with `Space T Enter`, mark a file or directory with `m`,
+then press `C` or run `:ConfigureGtest` in the summary buffer to select the
+executable. `Space Tt` runs the nearest test, `Space Tf` runs the file, and
+`Space Td` debugs with CodeLLDB. Rebuild after source changes; the adapter does
+not compile automatically. `TEST` and `TEST_F` are supported; parameterized
+`TEST_P` execution is not.
+
+C Unity projects use separate Overseer Configure, Build, and Run tasks backed by
+CMake/CTest. Open a C buffer and use `:OverseerRun`; the default test filter is
+`^unity_`. See the [C and C++ testing examples](../examples/testing/README.md)
+for complete setup instructions. Make/CMake commands can also run in `F7`'s
+terminal, and Overseer retains its applicable builtin tasks.
 
 The [C/C++ debugger helper](../lua/cpp_debug.lua) adds **C/C++: Launch executable
 (CodeLLDB)** to both C and C++ buffers. Existing adapters/profiles are preserved.
