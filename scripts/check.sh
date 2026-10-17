@@ -11,6 +11,7 @@ nvim --headless --clean -l tests/assembly_spec.lua
 nvim --headless --clean -l tests/assembly_format_spec.lua
 nvim --headless --clean -l tests/config_spec.lua
 nvim --headless --clean -l tests/workflow_spec.lua
+nvim --headless --clean -l tests/c_testing_spec.lua
 python3 tests/bootstrap_spec.py
 for script in scripts/*.sh; do bash -n "$script"; done
 if command -v shellcheck >/dev/null; then shellcheck scripts/*.sh; fi

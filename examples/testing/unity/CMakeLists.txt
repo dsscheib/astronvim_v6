@@ -1,0 +1,20 @@
+cmake_minimum_required(VERSION 3.20)
+project(unity_example LANGUAGES C)
+set(CMAKE_C_STANDARD 11)
+set(CMAKE_C_STANDARD_REQUIRED ON)
+include(CTest)
+set(UNITY_SOURCE_DIR "" CACHE PATH "Existing Unity checkout; blank downloads the pinned dependency")
+if(UNITY_SOURCE_DIR)
+  add_subdirectory("${UNITY_SOURCE_DIR}" "${CMAKE_BINARY_DIR}/unity" EXCLUDE_FROM_ALL)
+else()
+  include(FetchContent)
+  FetchContent_Declare(unity
+    GIT_REPOSITORY https://github.com/ThrowTheSwitch/Unity.git
+    GIT_TAG cbcd08fa7de711053a3deec6339ee89cad5d2697) # v2.6.1
+  FetchContent_MakeAvailable(unity)
+endif()
+add_library(calculator STATIC src/add.c)
+target_include_directories(calculator PUBLIC src)
+add_executable(unity_tests tests/test_add.c)
+target_link_libraries(unity_tests PRIVATE calculator unity)
+add_test(NAME unity_add COMMAND unity_tests)

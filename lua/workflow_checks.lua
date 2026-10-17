@@ -18,7 +18,11 @@ local groups = {
     { "Native GDB (DAP support needed)", { "gdb" } },
   },
   ["asm-gas"] = { toml, { "Native GAS compiler", { "gcc" } }, { "Native GDB (DAP support needed)", { "gdb" } } },
-  arm = { toml, { "ARM32 compiler", { "arm-none-eabi-gcc" } }, { "Cross GDB (DAP support needed)", { "gdb-multiarch" } } },
+  arm = {
+    toml,
+    { "ARM32 compiler", { "arm-none-eabi-gcc" } },
+    { "Cross GDB (DAP support needed)", { "gdb-multiarch" } },
+  },
   aarch64 = {
     toml,
     { "AArch64 compiler", { "aarch64-linux-gnu-gcc" } },
@@ -31,6 +35,8 @@ local groups = {
     { "CodeLLDB", { "codelldb" } },
   },
   go = { { "Go toolchain", { "go" } } },
+  unity = { { "C compiler", { "cc", "gcc", "clang" } }, { "CMake", { "cmake" } }, { "CTest", { "ctest" } } },
+  gtest = { { "C++ compiler", { "c++", "g++", "clang++" } }, { "CMake", { "cmake" } }, { "CTest", { "ctest" } } },
   rust = {
     { "Cargo", { "cargo" } },
     { "Rust compiler", { "rustc" } },
@@ -47,6 +53,7 @@ function M.enabled(config, plugins, formatters)
   if config.clangd then result[#result + 1] = "cpp" end
   if config.gopls then result[#result + 1] = "go" end
   if plugins.rustaceanvim then result[#result + 1] = "rust" end
+  if plugins["neotest-gtest"] then result[#result + 1] = "gtest" end
   if config.basedpyright or config.pyright then result[#result + 1] = "python" end
   if formatters.html or formatters.javascript or config.vtsls then result[#result + 1] = "web" end
   return result
@@ -57,7 +64,9 @@ function M.check(workflows)
   for _, workflow in ipairs(workflows) do
     assert(
       groups[workflow],
-      "Unknown workflow: " .. workflow .. "; use assembly, asm-nasm, asm-gas, arm, aarch64, cpp, go, rust, python, web"
+      "Unknown workflow: "
+        .. workflow
+        .. "; use assembly, asm-nasm, asm-gas, arm, aarch64, cpp, unity, gtest, go, rust, python, web"
     )
     for _, requirement in ipairs(groups[workflow]) do
       local executable

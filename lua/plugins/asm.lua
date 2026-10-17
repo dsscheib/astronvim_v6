@@ -23,18 +23,6 @@ return {
     },
   },
   {
-    "stevearc/overseer.nvim",
-    cmd = { "OverseerRun", "OverseerToggle", "OverseerTaskAction" },
-    opts = { templates = { "builtin" } },
-    config = function(_, opts)
-      local overseer = require "overseer"
-      overseer.setup(opts)
-      for _, template in ipairs(require("assembly").templates(overseer.TAG.BUILD)) do
-        overseer.register_template(template)
-      end
-    end,
-  },
-  {
     "mfussenegger/nvim-dap",
     optional = true,
     opts = function()
