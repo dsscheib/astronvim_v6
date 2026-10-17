@@ -36,8 +36,8 @@ DAP commands require `nvim-dap` to be installed and loaded.
   `.git`.
 - Configure architecture/dialect settings in the project's `.asm-lsp.toml` as
   needed. These Lua files do not supply those settings.
-- Automatic formatting is disabled for `asm`. `asmfmt` is assigned only to
-  `goasm` (Go/Plan 9 assembly).
+- Formatting for `asm` and `goasm` follows `.asm-lsp.toml`; see the formatting
+  section below.
 
 ## Tools to have available
 
@@ -55,10 +55,81 @@ Tools invoked by build tasks must be executable on Neovim's `PATH`.
 | Native LLDB debugging | A configured `codelldb` adapter |
 | ARM/cross-target debugging | `gdb-multiarch` with DAP support and a running GDB server |
 
-Mason's tool installer is configured to install `asm-lsp` and `codelldb`. These
+Mason's tool installer is configured to install `asm-lsp`, `codelldb`, and the
+Go/Plan 9 `asmfmt`. These
 files do not install assemblers, GCC toolchains, GDB, or a GDB server. The DAP
 plugin entry is optional: it configures an existing `nvim-dap` installation.
 The `codelldb` adapter itself must be configured elsewhere.
+
+## Formatting from `.asm-lsp.toml`
+
+Conform selects a formatter using the saved project configuration, not the file
+extension. It uses the attached asm-lsp server's root when available, otherwise
+the assembly root markers listed above. A `.asm-lsp.toml` in that root takes
+precedence over `$XDG_CONFIG_HOME/asm-lsp/.asm-lsp.toml` (normally
+`~/.config/asm-lsp/.asm-lsp.toml`). The local file replaces the global config.
+
+The first matching `[[project]]` entry wins, matching asm-lsp's declaration-order
+behavior. Entries can select a file or directory; relative paths are resolved
+against the project root. Files outside those entries use `[default_config]`.
+Put more specific entries before broader directories. Config edits take effect
+on the next formatting request after saving the TOML file.
+
+| Effective settings | Formatter |
+| --- | --- |
+| `assembler = "nasm"`, `instruction_set = "x86"`, `"x86-64"`, or `"x86/x86-64"` | `nasmfmt` |
+| `assembler = "go"` | Go/Plan 9 `asmfmt` |
+| `assembler = "gas"`, other dialects, or incomplete NASM settings | None |
+| No config file | None for `asm`; Go `asmfmt` for explicit `goasm` buffers |
+| Invalid/unreadable TOML or missing Python parser | None; a warning explains the problem |
+
+Example mixed project:
+
+```toml
+[default_config]
+assembler = "nasm"
+instruction_set = "x86-64"
+
+[[project]]
+path = "go-runtime"
+assembler = "go"
+instruction_set = "arm64"
+
+[[project]]
+path = "firmware"
+assembler = "gas"
+instruction_set = "arm"
+```
+
+The selector requires **Python 3.11+** for its standard-library TOML parser.
+Mason installs Go's `asmfmt`; `nasmfmt` is not in the Mason registry. To install
+the tested formatter versions directly with Go:
+
+```sh
+go install github.com/yamnikov-oleg/nasmfmt@v0.0.0-20230907082239-e010ffea9224
+go install github.com/klauspost/asmfmt/cmd/asmfmt@v1.3.2
+```
+
+Ensure Go's `GOBIN` (or `$(go env GOPATH)/bin` when unset) is on Neovim's `PATH`.
+The similarly named Rust `asmfmt` is a different tool; do not substitute it for
+Go's formatter. GAS, including ARM/Thumb/AArch64, remains unformatted because
+these formatters are not suitable for it.
+
+Use your normal AstroNvim format action, or run:
+
+```vim
+:lua require("conform").format({ lsp_format = "never" })
+```
+
+`:ConformInfo` shows the selected formatter and whether its executable is
+available. NASM output is rejected if it changes quoted string literals, because upstream
+`nasmfmt` can normalize whitespace inside them. Conform reports an error and
+leaves the buffer intact in that case.
+
+Both formatters consume buffer contents through stdin, so formatting
+does not require saving source edits first. Whole-buffer formatting is supported;
+no formatter-specific range arguments are configured. The configuration follows
+your existing format-on-save policy rather than enabling a new one.
 
 ## Building the current file
 
@@ -175,7 +246,7 @@ configure flashing, reset commands, or target-specific startup sequences.
 | `codelldb` adapter missing | Ensure your broader DAP setup registers it; this file adds only its launch profile |
 | Remote attach cannot connect | Check that the server is running, its address is correct, and the selected ELF matches the target |
 | Unexpected syntax diagnostics | Check the project's language-server architecture/dialect settings and the selected assembler task |
-| No automatic formatting | This is intentional for `asm`; `asmfmt` is configured only for `goasm` |
+| No formatting | Check `:ConformInfo`, the effective `.asm-lsp.toml` dialect/architecture, Python 3.11+, and formatter availability; GAS and other unsupported dialects intentionally select none |
 
 Use `:OverseerToggle` to inspect build failures. For multi-file projects, custom
 link options, libraries, firmware, or program arguments, keep those requirements

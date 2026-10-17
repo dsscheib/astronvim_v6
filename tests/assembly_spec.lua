@@ -53,8 +53,8 @@ local ok, error_message = xpcall(function()
   end
   for _, spec in ipairs(specs) do
     if spec[1] == "stevearc/conform.nvim" then
-      check(#spec.opts.formatters_by_ft.asm == 0, "Generic assembly uses Go formatter")
-      check(spec.opts.formatters_by_ft.goasm[1] == "asmfmt", "Explicit Go assembly formatting missing")
+      check(type(spec.opts.formatters_by_ft.asm) == "function", "Assembly formatter must use project settings")
+      check(type(spec.opts.formatters_by_ft.goasm) == "function", "Go assembly must respect explicit project settings")
     end
   end
   local dap = { adapters = {}, configurations = {} }

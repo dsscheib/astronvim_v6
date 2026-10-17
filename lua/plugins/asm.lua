@@ -29,7 +29,9 @@ return {
     config = function(_, opts)
       local overseer = require "overseer"
       overseer.setup(opts)
-      for _, template in ipairs(require("assembly").templates(overseer.TAG.BUILD)) do overseer.register_template(template) end
+      for _, template in ipairs(require("assembly").templates(overseer.TAG.BUILD)) do
+        overseer.register_template(template)
+      end
     end,
   },
   {
@@ -37,20 +39,40 @@ return {
     optional = true,
     opts = function()
       local dap = require "dap"
-      dap.adapters.gdb = dap.adapters.gdb or {
-        type = "executable", command = "gdb",
-        args = { "--interpreter=dap", "--eval-command", "set print pretty on" },
-      }
+      dap.adapters.gdb = dap.adapters.gdb
+        or {
+          type = "executable",
+          command = "gdb",
+          args = { "--interpreter=dap", "--eval-command", "set print pretty on" },
+        }
       dap.adapters.gdb_remote = function(callback)
         assert(vim.fn.executable "gdb-multiarch" == 1, "Install gdb-multiarch for ARM/cross-target debugging")
         callback { type = "executable", command = "gdb-multiarch", args = { "--interpreter=dap" } }
       end
-      local function program() return vim.fn.input("Path to linked executable/firmware ELF: ", vim.fn.getcwd() .. "/", "file") end
+      local function program()
+        return vim.fn.input("Path to linked executable/firmware ELF: ", vim.fn.getcwd() .. "/", "file")
+      end
       dap.configurations.asm = {
-        { name = "Assembly: Debug native executable (gdb)", type = "gdb", request = "launch", program = program, cwd = "${workspaceFolder}" },
-        { name = "Assembly: Debug native executable (codelldb)", type = "codelldb", request = "launch", program = program, cwd = "${workspaceFolder}", stopOnEntry = true },
         {
-          name = "Assembly: Attach ARM/cross target (GDB server)", type = "gdb_remote", request = "attach", program = program,
+          name = "Assembly: Debug native executable (gdb)",
+          type = "gdb",
+          request = "launch",
+          program = program,
+          cwd = "${workspaceFolder}",
+        },
+        {
+          name = "Assembly: Debug native executable (codelldb)",
+          type = "codelldb",
+          request = "launch",
+          program = program,
+          cwd = "${workspaceFolder}",
+          stopOnEntry = true,
+        },
+        {
+          name = "Assembly: Attach ARM/cross target (GDB server)",
+          type = "gdb_remote",
+          request = "attach",
+          program = program,
           target = function() return vim.fn.input("GDB server host:port: ", "localhost:3333") end,
           cwd = "${workspaceFolder}",
         },
@@ -60,12 +82,21 @@ return {
   {
     "stevearc/conform.nvim",
     opts = {
-      -- asmfmt is a Go/Plan 9 formatter. Never autoformat NASM/GAS with it.
-      formatters_by_ft = { asm = {}, goasm = { "asmfmt" } },
+      formatters_by_ft = {
+        asm = function(bufnr) return require("assembly_format").formatters(bufnr) end,
+        goasm = function(bufnr) return require("assembly_format").formatters(bufnr) end,
+      },
+      formatters = {
+        nasmfmt = {
+          condition = function() return vim.fn.executable "nasmfmt" == 1 end,
+          format = function(...) return require("assembly_format").nasm_format(...) end,
+        },
+      },
     },
   },
   {
     "WhoIsSethDaniel/mason-tool-installer.nvim",
-    opts = { ensure_installed = { "asm-lsp", "codelldb" } },
+    -- nasmfmt is installed separately with Go; Mason provides the Go asmfmt.
+    opts = { ensure_installed = { "asm-lsp", "codelldb", "asmfmt" } },
   },
 }
