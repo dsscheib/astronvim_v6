@@ -58,7 +58,8 @@ Rustaceanvim, Deno-nvim, and Nvim-dap-python.
 Language runtimes, system compilers, database clients, project dependencies,
 debug servers, and account authentication are not all supplied by Mason.
 For example, assembly needs GCC/NASM/GDB separately and NASM formatting uses a
-separately installed `nasmfmt`. Check from inside Neovim:
+separately installed `nasmfmt`. HTML/CSS/SCSS/Less/JS/JSX/TS/TSX use project-local Prettier
+when available, with a Mason-installed Prettier fallback. Check from inside Neovim:
 
 ```vim
 :echo exepath('gopls')
@@ -75,9 +76,30 @@ bash scripts/setup.sh
 bash scripts/setup.sh --file /path/to/project/main.go go gopls
 ```
 
-The first checks configured Mason packages. The file check also verifies the
-filetype, initialized server attachment, and availability of configured
-formatters. It does not validate all formatter output or debugger behavior.
+The first checks configured Mason packages and external prerequisites for
+enabled assembly, C/C++, Go, Rust, Python, and web workflows. It reports required
+missing tools as failures. Base assembly checks require Python's `tomllib`;
+NASM/GCC/linker/GDB availability is reported as optional there, since not every
+assembly project uses every backend. To require a specific backend, select one
+or more workflows explicitly:
+
+```sh
+bash scripts/setup.sh --workflow asm-nasm
+bash scripts/setup.sh --workflow arm --workflow aarch64
+bash scripts/setup.sh --workflow web --workflow cpp
+```
+
+Choices are `assembly`, `asm-nasm`, `asm-gas`, `arm`, `aarch64`, `cpp`, `go`,
+`rust`, `python`, and `web`. Explicit selection replaces automatic prerequisite
+selection; configured Mason packages are still checked. Node/npm, native/cross
+compilers, NASM/nasmfmt, GDB, Rust tools/Clippy, and the Python TOML capability are
+covered as applicable. GDB checks verify executable availability, not DAP build
+support or a remote target connection. These checks report prerequisites rather
+than installing system packages.
+
+The file check also verifies filetype, initialized server attachment, and
+configured formatter availability. It does not validate all formatter output or
+debugger behavior.
 Use `--install` when you want it to refresh/install missing configured tools;
 that requires network access and writes to the tool installation.
 
@@ -86,12 +108,14 @@ that requires network access and writes to the tool installation.
 | `bash scripts/check.sh` | Offline syntax/regression checks, bootstrap failure tests, shell syntax, diff whitespace |
 | `bash scripts/check_assembly.sh` | Assembly syntax/task checks and optional available-toolchain object compilation |
 | `nvim --headless --clean -l tests/assembly_format_spec.lua` | Dialect selection and available real NASM formatter checks |
+| `bash scripts/check_web.sh` | Real installed Conform/Prettier integration for HTML, stylesheets, JS/JSX/TS/TSX, config/ignores, fallback, and template isolation |
 | `bash scripts/check_rust.sh` | Real temporary Cargo/LSP/Neotest/CodeLLDB integration; executes fixture code |
 
 Both `check.sh` and `check_assembly.sh` include the assembly formatter-selection
 regressions. Selection checks always run; executable-dependent NASM checks
 print an explicit `SKIP` message when the required tool is absent. The general
-check also verifies test/TODO navigation dispatch and preserves tab mappings.
+check also verifies test/TODO navigation dispatch, tab mappings, workflow health
+failures, Go flag replacement, C/C++ debug prompts, and async formatter failures.
 The Rust integration check requires installed tools; passing syntax checks is
 not equivalent to testing the Rust debugger.
 

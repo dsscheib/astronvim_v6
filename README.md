@@ -55,7 +55,7 @@ failures and `:checkhealth` for provider or parser problems.
 ## 2. Verify language support
 
 A successful startup alone does not verify language servers or formatters.
-Run the tool check without requesting installation:
+Run the tool and workflow-prerequisite checks without requesting installation:
 
 ```bash
 bash scripts/setup.sh
@@ -76,6 +76,10 @@ Use a project with the appropriate root markers, such as `go.mod`, `manage.py`,
 `compile_commands.json`, or `.asm-lsp.toml`. The check waits up to 30 seconds for
 the named server. It checks formatter availability without modifying the file.
 It does not verify formatter output, debugger connections, or every language pack.
+The default setup check also reports external prerequisites for enabled workflows;
+use `--workflow asm-nasm`, `--workflow arm`, `--workflow web`, or `--workflow cpp`
+for an explicit prerequisite selection (repeat the option to combine them).
+Run `bash scripts/check_web.sh` for real Conform/Prettier integration checks.
 
 Django `.html` files under a `templates/` directory are recognized when an
 ancestor contains `manage.py`, stopping at the nearest Git repository boundary.

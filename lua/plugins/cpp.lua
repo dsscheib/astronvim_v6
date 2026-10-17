@@ -1,5 +1,10 @@
 -- lua/plugins/cpp.lua
 return {
+  {
+    "mfussenegger/nvim-dap",
+    optional = true,
+    opts = function() require("cpp_debug").setup(require "dap") end,
+  },
   -- 1. Configure clangd with optimized C/C++ flags via AstroLSP
   {
     "AstroNvim/astrolsp",

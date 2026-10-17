@@ -65,11 +65,44 @@ installed Nvim-highlight-colors plugin highlights recognized color values and
 integrates with completion icons. A conditional nvim-colorizer override exists
 in the Tailwind pack, but that separate plugin is not in your lockfile.
 
-HTML and CSS LSP formatting is explicitly disabled in the HTML/CSS pack.
-**Prettier is not explicitly installed or mapped by these imports.** Check
-`:ConformInfo` rather than assuming `Space lf` has a formatter for every web
-filetype. Django/Go templates and templ have their own formatter routes; see
+### Web formatting
+
+Your [web.lua override](../lua/plugins/web.lua) runs **Prettier through Conform**
+for `html`, `css`, `scss`, `less`, `javascript`, `javascriptreact` (JSX),
+`typescript`, and `typescriptreact` (TSX). Use `Space lf` / `:Format`, or save with
+format-on-save enabled. The HTML/CSS language servers' own formatting remains
+disabled, so the external formatter handles these filetypes.
+
+Conform searches ancestor `node_modules/.bin` directories for Prettier first,
+then falls back to `prettier` on PATH. Mason-tool-installer requests Prettier as
+the fallback; Node.js/npm must be available to install/run it. For consistent
+formatting with a project's CLI/CI, install a pinned project dependency:
+
+```sh
+npm install --save-dev --save-exact prettier
+```
+
+Prettier reads the project's `.prettierrc`/supported config files. The override
+also passes the nearest ancestor `.prettierignore` explicitly, including when
+Neovim starts outside the project or a nested formatting config changes the
+working directory. An ignored file is left unchanged. Use `:ConformInfo` to
+check the selected executable and formatter status.
+
+These explicit mappings cover HTML/CSS/SCSS/Less and JavaScript/JSX/TypeScript/TSX.
+PostCSS, JSON, Markdown, and other filetypes do not gain a Prettier mapping from
+this override. JS/TS buffers in Deno projects also use this Prettier route;
+choose a project override if the project requires a different formatting tool. Django templates retain Djlint, Go templates retain Djlint's
+Golang profile, and `.templ` files retain `templ fmt`; see
 [Python/Django](PYTHON_DJANGO_GUIDE.md) and [Go/templ](GO_TEMPL_GUIDE.md).
+
+## Repeatable integration check
+
+From the configuration repository root, run `bash scripts/check_web.sh` after
+plugins and Prettier are installed. It uses temporary fixtures to verify all
+eight filetypes, local executable priority, PATH/Mason fallback, project config,
+ignore files above nested configs, and template formatter isolation. No project
+dependencies are downloaded. Override `NVIM_TEST_PLUGIN_ROOT` or
+`NVIM_TEST_PRETTIER` if your installations live elsewhere.
 
 ## Troubleshooting
 
@@ -79,7 +112,7 @@ filetype. Django/Go templates and templ have their own formatter routes; see
 | Tailwind classes absent | Tailwind project config/dependencies, recognized filetype, server attachment |
 | Jest tests absent | Jest dependency/configuration, file pattern, adapter output |
 | Type checking absent | Project TypeScript installation, tsconfig, `:TSC` output |
-| Formatting does nothing | `:ConformInfo`; do not infer a Prettier setup from language support |
+| Formatting does nothing | `:ConformInfo`, Node/Prettier availability, filetype, and `.prettierignore`; check that the filetype is one of the eight web mappings |
 | Imports unchanged after move | LSP attachment and whether the rename used an integrated file operation |
 
 Sources: [enabled imports](../lua/community.lua), installed

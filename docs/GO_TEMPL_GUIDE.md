@@ -12,9 +12,18 @@ refactoring, and run `Space lf` to format. The Go community pack runs
 
 The inspected pack enables staticcheck, several additional analyses, completion
 of unimported packages, inlay hints, and CodeLens for tests/generation/module
-operations. **Its `gopls.buildFlags` includes `-tags integration`.** If editor
-diagnostics differ from `go test` or the normal build, compare build tags first.
-This setting does not automatically add tags to every separate test command.
+operations. Your [Go override](../lua/plugins/go.lua) clears the community
+pack's global `-tags integration` setting. Ordinary projects now use their
+normal build context. Opt in for a project that needs integration-tagged code,
+for example by starting Neovim from its environment:
+
+```sh
+GOFLAGS='-tags=integration' nvim .
+```
+
+This environment also affects Go commands launched from that Neovim session.
+Restart the server/editor after changing its build environment. Compare build
+tags if editor analysis differs from a CLI command run elsewhere.
 
 | Action | Keys / command |
 | --- | --- |

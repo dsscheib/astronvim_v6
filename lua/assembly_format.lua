@@ -115,13 +115,28 @@ local function literals(lines)
 end
 
 function M.nasm_format(_, _, lines, callback)
-  local result = vim.system({ "nasmfmt", "-" }, { stdin = table.concat(lines, "\n") .. "\n", text = true }):wait(2000)
-  if result.code ~= 0 then return callback("nasmfmt failed: " .. (result.stderr or "")) end
-  local output = vim.split(result.stdout:gsub("\n$", ""), "\n", { plain = true })
-  if not vim.deep_equal(literals(lines), literals(output)) then
-    return callback "nasmfmt changed a string literal; formatting was rejected to preserve source data"
-  end
-  callback(nil, output)
+  local input = vim.deepcopy(lines)
+  local ok, process = pcall(
+    vim.system,
+    { "nasmfmt", "-" },
+    {
+      stdin = table.concat(input, "\n") .. "\n",
+      text = true,
+      timeout = 2000,
+    },
+    vim.schedule_wrap(function(result)
+      if result.code == 124 then return callback "nasmfmt timed out after 2000 ms" end
+      if result.code ~= 0 then
+        return callback(("nasmfmt failed (exit %s): %s"):format(result.code, vim.trim(result.stderr or "")))
+      end
+      local output = vim.split((result.stdout or ""):gsub("\n$", ""), "\n", { plain = true })
+      if not vim.deep_equal(literals(input), literals(output)) then
+        return callback "nasmfmt changed a string literal; formatting was rejected to preserve source data"
+      end
+      callback(nil, output)
+    end)
+  )
+  if not ok then vim.schedule(function() callback("Cannot start nasmfmt: " .. tostring(process)) end) end
 end
 
 return M

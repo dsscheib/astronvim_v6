@@ -77,7 +77,7 @@ Installing an adapter alone does not create every possible launch configuration.
 | Rust | `:RustLsp debuggables` builds/selects a Cargo target using CodeLLDB |
 | Assembly | Three custom profiles; linked executable/ELF required; [assembly guide](ASSEMBLY_GUIDE.md) |
 | JavaScript/TypeScript | JS debug adapter is requested; configure a suitable project launch/attach profile |
-| C/C++ | CodeLLDB installed; a general C/C++ launch profile is not defined by `cpp.lua` |
+| C/C++ | `C/C++: Launch executable (CodeLLDB)` prompts for binary, working directory, and individual arguments; build with symbols first |
 | Shell | Bash debug adapter requested by the Bash pack; verify shell support and profile |
 
 If a breakpoint is rejected, check debug symbols, source paths, selected binary,

@@ -56,10 +56,19 @@ does not define a C/C++ build task or Neotest adapter. Overseer can expose
 applicable builtin tasks, but project build discovery is separate from the
 assembly-only templates added by this repository.
 
-CodeLLDB is installed, but `cpp.lua` does not add a general C/C++ launch profile.
-Use a suitable DAP project configuration before `Space dc`. Build with symbols
-and select the linked executable. See [debugging](TESTING_DEBUGGING_GUIDE.md)
-for breakpoint/stepping commands.
+The [C/C++ debugger helper](../lua/cpp_debug.lua) adds **C/C++: Launch executable
+(CodeLLDB)** to both C and C++ buffers. Existing adapters/profiles are preserved.
+Build with debug symbols first, set a breakpoint, then press `Space dc` and
+choose the profile. It prompts for:
+
+- The linked executable (file completion).
+- The working directory (directory completion).
+- Arguments, one at a time; an empty entry finishes the list.
+
+Arguments are literal strings: enter `hello world` as one argument without shell
+quotes. The profile stops on entry; continue to your breakpoint. It does not
+build automatically. A typical fixture build is `c++ -g -O0 main.cpp -o app`.
+See [debugging](TESTING_DEBUGGING_GUIDE.md) for stepping and evaluation commands.
 
 ## Troubleshooting
 

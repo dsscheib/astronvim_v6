@@ -71,6 +71,7 @@ state; make a config override if you need a persistent policy.
 | Rust | Rust-analyzer/rustfmt via LSP fallback |
 | Python | `ruff_fix`, `ruff_organize_imports`, `ruff_format` |
 | C / C++ | `clang-format` |
+| HTML / CSS / SCSS / Less / JavaScript / JSX / TypeScript / TSX | `prettier`: project-local executable preferred, Mason/PATH fallback |
 | Django templates (`htmldjango`) | `djlint` |
 | Go templates (`html.gotmpl`, `gotmpl`) | `djlint_go` with `--profile=golang` |
 | templ | Official `templ` formatter |
@@ -81,8 +82,10 @@ state; make a config override if you need a persistent policy.
 
 Formatting may apply fixes as well as indentation: Ruff includes fixes/import
 organization, and ShellCheck can provide fixes. Check project formatter files
-such as `.stylua.toml`, `.clang-format`, and `pyproject.toml`. Do not assume
-Prettier is configured merely because TypeScript/HTML packs are enabled.
+such as `.stylua.toml`, `.clang-format`, and `pyproject.toml`. The HTML/CSS
+Prettier override respects project Prettier config and `.prettierignore` for
+HTML, stylesheets, JavaScript/JSX, and TypeScript/TSX. Other Prettier-supported
+languages are not automatically mapped.
 
 ## Syntax parsing and libraries
 

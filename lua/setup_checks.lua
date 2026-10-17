@@ -87,9 +87,28 @@ function M.file(path, filetype, server)
   print("Verified filetype, LSP attachment and configured formatters: " .. path)
 end
 
+function M.prerequisites(workflows)
+  require("lazy").load { plugins = { "mason.nvim" } }
+  local checks = require "workflow_checks"
+  workflows = workflows
+    or checks.enabled(
+      options("astrolsp").config or {},
+      require("lazy.core.config").plugins,
+      options("conform.nvim").formatters_by_ft or {}
+    )
+  checks.report(workflows)
+end
+
 function M.cli()
   local ok, message = xpcall(function()
-    M.tools(vim.env.NVIM_SETUP_INSTALL == "1")
+    local tools_ok, tools_error = pcall(M.tools, vim.env.NVIM_SETUP_INSTALL == "1")
+    local prerequisites_ok, prerequisites_error = pcall(M.prerequisites,
+      vim.env.NVIM_CHECK_WORKFLOWS and vim.split(vim.env.NVIM_CHECK_WORKFLOWS, ",", { trimempty = true }) or nil
+    )
+    local errors = {}
+    if not tools_ok then errors[#errors + 1] = tostring(tools_error) end
+    if not prerequisites_ok then errors[#errors + 1] = tostring(prerequisites_error) end
+    assert(#errors == 0, table.concat(errors, "\n"))
     if vim.env.NVIM_CHECK_FILE then
       assert(vim.env.NVIM_CHECK_FT and vim.env.NVIM_CHECK_LSP, "Provide --file PATH FILETYPE SERVER")
       M.file(vim.env.NVIM_CHECK_FILE, vim.env.NVIM_CHECK_FT, vim.env.NVIM_CHECK_LSP)

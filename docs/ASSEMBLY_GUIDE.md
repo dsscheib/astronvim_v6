@@ -127,6 +127,11 @@ available. NASM output is rejected if it changes quoted string literals, because
 `nasmfmt` can normalize whitespace inside them. Conform reports an error and
 leaves the buffer intact in that case.
 
+NASM formatting starts an asynchronous process with a two-second timeout.
+Launch failures, timeouts, nonzero exits, and literal changes are reported through
+Conform. `:Format` uses the existing async route; synchronous save formatting
+still follows Conform's format-on-save timeout policy.
+
 Both formatters consume buffer contents through stdin, so formatting
 does not require saving source edits first. Whole-buffer formatting is supported;
 no formatter-specific range arguments are configured. The configuration follows

@@ -24,6 +24,14 @@ local function check(relative, expected, ft)
   assert(vim.deep_equal(select(relative, ft), expected), relative .. ": formatter mismatch")
   count = count + 1
 end
+local function format(lines)
+  local done, failure, output = false, nil, nil
+  formatting.nasm_format(nil, nil, lines, function(err, result)
+    failure, output, done = err, result, true
+  end)
+  assert(vim.wait(5000, function() return done end, 10), "Formatter callback did not arrive")
+  return failure, output
+end
 local ok, err = xpcall(function()
   check("plain.asm", {})
   check("go.s", { "asmfmt" }, "goasm")
@@ -106,13 +114,42 @@ local ok, err = xpcall(function()
       assert(type(opts.formatters.nasmfmt.condition) == "function")
     end
   end
+  local system = vim.system
+  local passed, failure = xpcall(function()
+    local completion, options, called, done, message, output
+    vim.system = function(_, opts, callback)
+      options, completion, called = opts, callback, true
+      return {} -- deliberately has no wait(): the formatter must not block
+    end
+    formatting.nasm_format(nil, nil, { "ret" }, function(err, result)
+      done, message, output = true, err, result
+    end)
+    assert(called and not done and options.timeout == 2000, "Formatter did not return before completion")
+    completion { code = 0, stdout = "        ret\n", stderr = "" }
+    assert(vim.wait(1000, function() return done end, 10), "Callback was not scheduled")
+    assert(not message and output[1] == "        ret", "Async output lost")
+    for _, result in ipairs {
+      { code = 124, stderr = "", expected = "timed out" },
+      { code = 3, stderr = "fixture error", expected = "fixture error" },
+    } do
+      vim.system = function(_, _, callback)
+        callback(result)
+        return {}
+      end
+      local err, lines = format { "ret" }
+      assert(err and err:find(result.expected, 1, true) and lines == nil, "Formatter failure not reported")
+    end
+    vim.system = function() error "fixture launch error" end
+    local err, lines = format { "ret" }
+    assert(err and err:find("Cannot start nasmfmt", 1, true) and lines == nil, "Spawn failure was not reported")
+    count = count + 4
+  end, debug.traceback)
+  vim.system = system
+  assert(passed, failure)
   if vim.fn.executable "nasmfmt" == 1 then
     local lines = { "section .text", "global sample", "sample:", " mov rax,rbx", " ret" }
-    local formatted
-    formatting.nasm_format(nil, nil, lines, function(error, output)
-      assert(not error, error)
-      formatted = output
-    end)
+    local failure, formatted = format(lines)
+    assert(not failure, failure)
     assert(formatted and not vim.deep_equal(lines, formatted), "NASM formatting did not run")
     if vim.fn.executable "nasm" == 1 then
       for index, body in ipairs { lines, formatted } do
@@ -137,11 +174,8 @@ local ok, err = xpcall(function()
     else
       print "SKIP: NASM machine-code comparison (nasm not on PATH)"
     end
-    local rejected
-    formatting.nasm_format(nil, nil, { 'message: db "hello,world  !", 0' }, function(error, output)
-      rejected = error
-      assert(output == nil, "Unsafe formatting returned replacement lines")
-    end)
+    local rejected, output = format { 'message: db "hello,world  !", 0' }
+    assert(output == nil, "Unsafe formatting returned replacement lines")
     assert(rejected and rejected:find("string literal", 1, true), "Literal corruption was not rejected")
     count = count + 2
     if vim.fn.executable "nasm" == 1 then count = count + 1 end
