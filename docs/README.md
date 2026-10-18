@@ -14,6 +14,7 @@ Filetype-specific mappings appear only when their plugin or LSP attaches.
 
 | Work | Reference |
 | --- | --- |
+| Move within files, combine operators and text objects, repeat edits | [Vim motions](VIM_MOTIONS_GUIDE.md) |
 | Find a plugin by name, including dependencies | [Complete plugin index](PLUGIN_INDEX.md) |
 | Find files, search, browse symbols, manage windows and sessions | [Editor and navigation](EDITOR_GUIDE.md) |
 | Completion, snippets, surrounding text, Copilot | [Editing and completion](EDITING_COMPLETION_GUIDE.md) |

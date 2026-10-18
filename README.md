@@ -9,7 +9,8 @@ and x86-64/ARM assembly.
 Start with [docs/README.md](docs/README.md) for workflow guides covering every
 configured plugin, or use the [complete plugin index](docs/PLUGIN_INDEX.md) to
 look up a plugin by name. The guides cover commands, inherited keybindings,
-project requirements, and troubleshooting.
+project requirements, and troubleshooting. For core movement and editing, see
+the [Vim motions reference](docs/VIM_MOTIONS_GUIDE.md).
 
 ## 1. Install
 
