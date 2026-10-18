@@ -32,7 +32,8 @@ word replacement regardless of your position within it.
 
 | Keys | Movement |
 | --- | --- |
-| `h`, `j`, `k`, `l` | Left, down, up, right |
+| `h` / `l` | Left / right |
+| `j` / `k` | Down / up a displayed line; with a count, use file lines (see below) |
 | `w` / `b` | Next / previous word start |
 | `e` / `ge` | Current or next / previous word end |
 | `W`, `B`, `E`, `gE` | Same operations using whitespace-separated WORDs |
@@ -73,8 +74,14 @@ operator or character search.
 | `zz` | Center the cursor line in the window |
 | `zt` / `zb` | Position the cursor line near the top / bottom |
 
-`j` and `k` use actual file lines; `gj` and `gk` use screen lines. `zz`, `zt`,
-and `zb` change the view without selecting a new target line. `dG` deletes from
+In this configuration, AstroNvim maps uncounted `j`/`k` to `gj`/`gk` in Normal
+and Visual modes, so they follow displayed lines when text wraps. Counts retain
+file-line movement: `3j` moves three file lines, and `1j` moves one. Explicit
+`gj`/`gk` always use displayed lines. Operator-pending `j`/`k` keep built-in
+behavior, so `dj` still deletes the current and next file line.
+
+`zz`, `zt`, and `zb` change the view without selecting a new target line.
+`dG` deletes from
 the current line to EOF; `dgg` deletes from the current line to the start.
 
 ## Search, jumps, and marks
@@ -157,11 +164,39 @@ Normal deletes overwrite the unnamed register; use `"_d` followed by a motion
 
 ## Help and configuration differences
 
-These are built-in Vim/Neovim keys. Plugins, filetype mappings, and terminal key
-handling can override them; `,` is also this configuration's local leader.
-Use `:verbose nmap w`, `:verbose xmap i`, or `:verbose omap i` to inspect Normal,
-Visual, or operator-pending mappings. These commands show mappings; an absent
-mapping does not mean a built-in key is unavailable.
+Most keys above retain their built-in Vim/Neovim behavior. These configured
+overrides are especially relevant when following other Vim references:
+
+| Keys | Built-in behavior | Behavior here |
+| --- | --- | --- |
+| `j` / `k` in Normal and Visual modes | Move by file lines | Move by displayed lines without a count; file lines with a count |
+| `gl` | Move one screen column right | Open the diagnostic float (AstroNvim) |
+| `gd` / `gD` | Search for a local / global declaration within the file | Jump to an LSP definition / declaration when the attached server supports it |
+| `Ctrl+h` | Move left | Move to the left split (Smart-splits) |
+| `Ctrl+j` | Move down | Move to the split below (Smart-splits) |
+| `Ctrl+k` | No built-in Normal-mode movement | Move to the split above (Smart-splits) |
+| `Ctrl+l` | Redraw the screen | Move to the right split (Smart-splits) |
+
+LSP mappings are buffer-specific. In buffers without a supporting server, `gd`
+and `gD` retain their built-in behavior unless another mapping overrides them.
+Smart-splits also integrates window movement with supported terminal multiplexers.
+
+Mini-surround uses `gza` (add), `gzd` (delete), `gzr` (replace), and other `gz…`
+sequences. It preserves built-in `s` and `S`. Standard word motions, character
+searches, search repeats, and text objects described above remain available.
+The `,` key is also this configuration's local leader; filetype-specific mappings
+beginning with it may delay or extend its character-search-repeat behavior.
+
+Plugin buffers have their own mappings: for example, `h`/`l` in Neo-tree collapse
+or expand entries, and `m` in the Neotest summary marks tests rather than setting
+a Vim mark. See [Editor and navigation](EDITOR_GUIDE.md) and
+[Testing and debugging](TESTING_DEBUGGING_GUIDE.md) for those contexts.
+
+Inspect the active buffer's mappings with `:verbose nmap j`, `:verbose nmap gl`,
+or `:verbose nmap gd`. Use `:verbose xmap j` for Visual mode and
+`:verbose omap j` for operator-pending mode. These commands show mappings and
+where they were set; an absent mapping does not mean a built-in key is
+unavailable.
 
 For the installed version's authoritative help, use `:help motion.txt`,
 `:help operator`, `:help text-objects`, `:help word-motions`,
