@@ -230,7 +230,7 @@ function M.cli()
     vim.wait(2000, function() return #vim.lsp.get_clients { _uninitialized = true } == 0 end, 50)
   end
   if not ok then
-    vim.api.nvim_err_writeln(message)
+    vim.api.nvim_echo({ { message, "ErrorMsg" } }, true, { err = true })
     vim.cmd.cquit(1)
   end
   vim.cmd.quitall()
