@@ -1,5 +1,11 @@
 -- This file simply bootstraps the installation of Lazy.nvim and then calls other files for execution
 -- This file doesn't necessarily need to be touched, BE CAUTIOUS editing this file and proceed at your own risk.
+
+-- Use the pynvim virtualenv that pop-os-system-build's workstation role creates.
+-- Set before plugins load: Neovim caches the result of its first Python provider check.
+local nvim_python = vim.fn.expand "~/.local/share/nvim-python/bin/python"
+if vim.fn.executable(nvim_python) == 1 then vim.g.python3_host_prog = nvim_python end
+
 local lazypath = vim.env.LAZY or vim.fn.stdpath "data" .. "/lazy/lazy.nvim"
 
 if not (vim.env.LAZY or (vim.uv or vim.loop).fs_stat(lazypath)) then
